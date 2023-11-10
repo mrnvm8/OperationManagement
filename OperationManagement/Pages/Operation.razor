@@ -138,7 +138,7 @@ else if (showDeviceModal)
         //If create button was clicked,
         //Save the Operation
         //if name is empty do not save operation
-        if (!String.IsNullOrEmpty(_operation.Name))
+        if (!String.IsNullOrEmpty(_operation.Name) && _operation.OrderInWhichToPerform > 0)
         {
             if (accepted)
             {
