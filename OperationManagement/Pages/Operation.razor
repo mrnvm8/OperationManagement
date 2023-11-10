@@ -1,0 +1,212 @@
+﻿@using OperationManagement.Data
+@inject OperationService OptServices
+
+<PageTitle>Operations</PageTitle>
+
+<h2 class="page-header">Operation Management</h2>
+@if (OptServices._operationsList.Count() == 0)
+{
+    <button class="btn btn-primary" @onclick="() => OnOpenOperationDailog()"> Add Operation</button>
+    <p class="mt-5">No operation can be done yet, please add an operation</p>
+}
+else
+{
+    <button class="btn btn-primary" @onclick="() => OnOpenOperationDailog()"> Add Operation</button>
+    <table class="table mt-5 custom-table">
+        <thead>
+            <tr>
+                <th>Operation Name</th>
+                <th>Operation Order</th>
+                <th>Device Name</th>
+                <th>Device Type</th>
+                <th>Image Data</th>
+                <th>Remove Operation</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var opt in OptServices._operationsList)
+            {
+                <tr class="spacer"><td colspan="100"></td></tr>
+                <tr>
+                    <td class="pt-3">@opt.Name</td>
+                    <td class="pt-3">@opt.OrderInWhichToPerform</td>
+                    @* making sure it does not display Device type and Name,When device is Empty *@
+                    @if (opt.Device is not null)
+                    {
+                        <td class ="pt-3">@opt.Device!.Name</td>
+                        <td class="pt-3">@opt.Device.DeviceType</td>
+                    }
+                    else
+                    {
+                        <th></th>
+                        <th></th>
+                    }
+                    <td class="pt-3">
+                        <div class="background">
+                            <img src="@ConvertImage(opt.ImageData)" class="img img-operation" />
+                        </div>
+                    </td>
+                    <td class="pt-3">
+                        <button class="btn btn-warning" @onclick="() => OnOpenDeviceDailog(opt.OperationID)">
+                            Add Device
+                        </button>|
+                        <button class="btn btn-danger" @onclick="(() => RemoveOperation(opt.OperationID))">
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@* Modal Form for Adding Operation and Device *@
+@if (showOperationModal)
+{
+    <ModalDialog Title="Add Operation" OnClose="@OnCloseOperationDailog">
+        <div>
+            <div class="form-content">
+                <EditForm class="form-detail" Model="_operation">
+                    <div class="mb-3">
+                        <div class="form-row">
+                            <label>Operation Name</label>
+                            <InputText id="Name" @bind-Value="_operation.Name" class="form-control" />
+                        </div>
+
+                        <div class="form-row mt-3">
+                            <label>Operform Order </label>
+                            <InputNumber id="OrderInWhichToPerform" @bind-Value="_operation.OrderInWhichToPerform"
+                                         class="form-control" />
+                        </div>
+
+                        <div class="form-row mt-3">
+                            <label>ImageData </label>
+                            <InputFile id="ImageData" OnChange="@HandleFileSelected" class="form-control" />
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </ModalDialog>
+}
+else if (showDeviceModal)
+{
+    <ModalDialog Title="Add Device" OnClose="@OnCloseDeviceDailog">
+        <EditForm class="form-detail" Model="_device">
+            <div class="mb-3">
+                <div class="form-row mt-3">
+                    <label>Devive Name</label>
+                    <InputText id="Name" @bind-Value="_device.Name" class="form-control" />
+                </div>
+
+                <div class="form-row mt-3">
+                    <label>Device Type</label>
+                    <InputSelect @bind-Value="_device.DeviceType" class="form-select">
+                        @foreach (var type in Enum.GetValues(typeof(DeviceType)))
+                        {
+                            <option value="@type">@type</option>
+                        }
+                    </InputSelect>
+                </div>
+            </div>
+
+        </EditForm>
+    </ModalDialog>
+}
+
+@code {
+    //
+    private OperationManagement.Model.Operation _operation = 
+            new OperationManagement.Model.Operation {OrderInWhichToPerform = 1};
+
+    private Device _device = new();
+    private int operationId { get; set; }
+    public bool showOperationModal { get; set; }
+    public bool showDeviceModal { get; set; }
+    private IBrowserFile? file;
+
+
+    //Removing operation on the list
+    private void RemoveOperation(int operationId)
+    {
+        OptServices.RemoveOperations(operationId);
+    }
+    //The following functions are for openning and closing
+    // Operation and Device Modal Dialog form
+    private void OnCloseOperationDailog(bool accepted)
+    {
+        //If create button was clicked,
+        //Save the Operation
+        //if name is empty do not save operation
+        if (!String.IsNullOrEmpty(_operation.Name))
+        {
+            if (accepted)
+            {
+                OptServices.AddOperations(_operation);
+                _operation = new OperationManagement.Model.Operation { OrderInWhichToPerform = 1 };
+            }
+        }
+        showOperationModal = false;
+        StateHasChanged();
+
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        file = e.GetMultipleFiles().FirstOrDefault();
+        if (file != null)
+        {
+            var buffer = new byte[file.Size];
+            using (var stream = file.OpenReadStream())
+            {
+                await stream.ReadAsync(buffer, 0, buffer.Length);
+            }
+            _operation.ImageData = buffer.ToArray();
+        }
+    }
+
+    private void OnOpenOperationDailog()
+    {
+        //close the OperationModal form
+        showOperationModal = true;
+        StateHasChanged();
+    }
+    private void OnCloseDeviceDailog(bool accepted)
+    {
+        //If create button was clicked,
+        //Save the devide to the given operation
+        //if name is empty do not save device to operation
+        if (!String.IsNullOrEmpty(_device.Name))
+        {
+            if (accepted)
+            {
+                OptServices.AddDeviceToOperation(operationId, _device);
+                _device = new Device();
+            }
+        }
+        showDeviceModal = false;
+        StateHasChanged();
+    }
+    private void OnOpenDeviceDailog(int optId)
+    {
+        //Get the operationID and assign it to the variable
+        //operationId to be used later
+        operationId = optId;
+        //open the device modal form
+        showDeviceModal = true;
+        StateHasChanged();
+    }
+
+    //Converting the byte array back to Image 
+    private string ConvertImage(byte[] image)
+    {
+
+        if (image != null)
+        {
+            var base64 = Convert.ToBase64String(image);
+            var fs = string.Format("data:image.jpg;base64,{0}", base64);
+            return fs;
+        }
+        return "";
+    }
+}

@@ -1,0 +1,45 @@
+﻿
+.background {
+    background-size: 150px;
+    max-width: 50%;
+}
+
+.img-operation {
+    max-width: 6rem;
+    height :auto;
+}
+
+.page-header {
+    text-shadow: 2px 2px rgb(255, 181, 22);
+    font-size: 30px;
+    font-family: serif;
+    display: block;
+    text-transform: uppercase;
+    text-align: center;
+    font-style: italic;
+    padding: 10px;
+    border-bottom: 1px solid #333;
+    margin: 24px auto;
+    font-weight: 100;
+}
+
+.custom-table {
+    min-width: 900px;
+}
+
+.custom-table thead tr,
+.custom-table thead th {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1rem;
+}
+
+.custom-table tbody th small,
+.custom-table tbody td small {
+    color: #b3b3b3;
+    font-weight: 300;
+}
+
+.custom-table tbody td{
+    
+}
